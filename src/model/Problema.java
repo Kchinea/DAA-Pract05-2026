@@ -26,4 +26,15 @@ public class Problema {
     public boolean sonIncompatibles(int cliente1, int cliente2) {
         return incompatibilidades[cliente1][cliente2];
     }
+
+    // Comprueba si asignar 'clienteId' a 'instalacionId' viola alguna incompatibilidad
+    // con los clientes que ya están siendo servidos desde esa instalación.
+    public boolean esCompatible(Solucion sol, int clienteId, int instalacionId) {
+        for (int k = 0; k < clientes.size(); k++) {
+            if (sol.getSuministros()[k][instalacionId] > 0 && sonIncompatibles(clienteId, k)) {
+                return false;
+            }
+        }
+        return true;
+    }
 }

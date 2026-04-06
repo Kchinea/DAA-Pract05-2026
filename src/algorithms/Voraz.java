@@ -34,7 +34,7 @@ public class Voraz {
                     double capRestante = sol.getCapacidadRestante()[iId];
 
                     // Solo nos valen instalaciones con hueco y que sean COMPATIBLES
-                    if (capRestante > 0 && esCompatible(sol, cId, iId)) {
+                    if (capRestante > 0 && problema.esCompatible(sol, cId, iId)) {
                         
                         // Calculamos el coste de esta opción
                         double costeEvaluado = problema.getCostosTransporte()[cId][iId];
@@ -69,22 +69,5 @@ public class Voraz {
         
         System.out.println("Voraz terminado. Coste total: " + sol.getCosteTotal());
         return sol;
-    }
-
-    // --- MÉTODO CLAVE: Comprobar las restricciones CI ---
-    private boolean esCompatible(Solucion sol, int clienteActualId, int instalacionId) {
-        // Revisamos a todos los clientes del problema
-        for (int k = 0; k < problema.getClientes().size(); k++) {
-            
-            // Si el cliente 'k' ya está recibiendo suministros de esta instalación...
-            if (sol.getSuministros()[k][instalacionId] > 0) {
-                
-                // ... comprobamos si se lleva mal con nuestro cliente actual
-                if (problema.sonIncompatibles(clienteActualId, k)) {
-                    return false; // ¡Peligro! Son incompatibles, abortar.
-                }
-            }
-        }
-        return true; // Vía libre, no hay conflictos.
     }
 }

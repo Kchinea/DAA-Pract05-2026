@@ -21,9 +21,7 @@ public class Grasp {
         this.problema = problema;
         this.busquedasLocales = busquedasLocales;
         this.tamañoLRC = tamañoLRC;
-        // Usamos una semilla fija (ej. 42) temporalmente para que las pruebas te den siempre igual.
-        // Cuando vayas a entregar, puedes quitar el '42' para que sea totalmente aleatorio.
-        this.random = new Random(42); 
+        this.random = new Random(); 
     }
 
     public Solucion ejecutar(int iteraciones) {
@@ -68,7 +66,7 @@ public class Grasp {
                     int iId = inst.getId();
                     double capRestante = sol.getCapacidadRestante()[iId];
 
-                    if (capRestante > 0 && esCompatible(sol, cId, iId)) {
+                    if (capRestante > 0 && problema.esCompatible(sol, cId, iId)) {
                         double costeEvaluado = problema.getCostosTransporte()[cId][iId];
                         if (!sol.getInstalacionesAbiertas()[iId]) {
                             costeEvaluado += (inst.getCostoFijo() / inst.getCapacidad());
@@ -99,15 +97,6 @@ public class Grasp {
             }
         }
         return sol;
-    }
-
-    private boolean esCompatible(Solucion sol, int clienteId, int instalacionId) {
-        for (int k = 0; k < problema.getClientes().size(); k++) {
-            if (sol.getSuministros()[k][instalacionId] > 0 && problema.sonIncompatibles(clienteId, k)) {
-                return false;
-            }
-        }
-        return true;
     }
 
     // Clase auxiliar muy simple para guardar la pareja (ID, coste)
