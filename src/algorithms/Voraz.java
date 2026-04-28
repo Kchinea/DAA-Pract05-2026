@@ -22,8 +22,7 @@ public class Voraz {
             double demandaRestante = cliente.getDemanda();
             int cId = cliente.getId();
 
-            // 2. Multi-Source: Un cliente puede necesitar varias instalaciones 
-            // para satisfacer toda su demanda. Repetimos hasta que su demanda sea 0.
+            // 2. Multi-Source: Un cliente puede necesitar varias instalaciones para satisfacer toda su demanda. Repetimos hasta que su demanda sea 0.
             while (demandaRestante > 0) {
                 int mejorInstalacion = -1;
                 double mejorCoste = Double.MAX_VALUE;
@@ -63,7 +62,7 @@ public class Voraz {
                 double cantidadAsignar = Math.min(demandaRestante, capDisponible);
 
                 sol.añadirSuministro(cId, mejorInstalacion, cantidadAsignar);
-                demandaRestante -= cantidadAsignar; // Actualizamos lo que le falta al cliente
+                demandaRestante -= cantidadAsignar; // Actualizamos lo que le falta de la demanda del cliente
             }
         }
         

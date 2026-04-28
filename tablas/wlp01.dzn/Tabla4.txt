@@ -1,0 +1,55 @@
+
+--- TABLA 4: SOLUCIÓN DE APERTURA DE INSTALACIONES ---
+Instalación    | Estado  | Coste Fijo
+---------------+---------+-----------
+Instalación 0  | Cerrada | 0,00      
+Instalación 1  | Cerrada | 0,00      
+Instalación 2  | Abierta | 350,00    
+Instalación 3  | Cerrada | 0,00      
+Instalación 4  | Abierta | 530,00    
+Instalación 5  | Cerrada | 0,00      
+Instalación 6  | Abierta | 780,00    
+Instalación 7  | Abierta | 510,00    
+Instalación 8  | Cerrada | 0,00      
+Instalación 9  | Cerrada | 0,00      
+Instalación 10 | Cerrada | 0,00      
+Instalación 11 | Cerrada | 0,00      
+Instalación 12 | Abierta | 360,00    
+Instalación 13 | Abierta | 390,00    
+Instalación 14 | Cerrada | 0,00      
+Instalación 15 | Cerrada | 0,00      
+Instalación 16 | Cerrada | 0,00      
+Instalación 17 | Cerrada | 0,00      
+Instalación 18 | Abierta | 350,00    
+Instalación 19 | Abierta | 420,00    
+Instalación 20 | Abierta | 590,00    
+Instalación 21 | Abierta | 590,00    
+Instalación 22 | Cerrada | 0,00      
+Instalación 23 | Abierta | 570,00    
+Instalación 24 | Abierta | 510,00    
+Instalación 25 | Cerrada | 0,00      
+Instalación 26 | Abierta | 890,00    
+Instalación 27 | Abierta | 360,00    
+Instalación 28 | Cerrada | 0,00      
+Instalación 29 | Abierta | 920,00    
+Instalación 30 | Cerrada | 0,00      
+Instalación 31 | Abierta | 490,00    
+Instalación 32 | Abierta | 910,00    
+Instalación 33 | Abierta | 290,00    
+Instalación 34 | Abierta | 370,00    
+Instalación 35 | Cerrada | 0,00      
+Instalación 36 | Cerrada | 0,00      
+Instalación 37 | Cerrada | 0,00      
+Instalación 38 | Abierta | 470,00    
+Instalación 39 | Cerrada | 0,00      
+Instalación 40 | Abierta | 440,00    
+Instalación 41 | Abierta | 760,00    
+Instalación 42 | Abierta | 480,00    
+Instalación 43 | Cerrada | 0,00      
+Instalación 44 | Abierta | 280,00    
+Instalación 45 | Abierta | 1020,00   
+Instalación 46 | Cerrada | 0,00      
+Instalación 47 | Abierta | 280,00    
+Instalación 48 | Abierta | 940,00    
+Instalación 49 | Abierta | 740,00    
+TOTAL          |         | 15590,00  

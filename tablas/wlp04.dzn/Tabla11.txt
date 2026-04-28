@@ -1,0 +1,6 @@
+
+--- TABLA 11: RESULTADOS GVNS (AJUSTE Y RESULTADOS) ---
+Instancia | kmax | Ejec. | |Jopen| | C. Fijo  | C. Asig. | C. Total | Incomp. | CPU_Time (s)
+----------+------+-------+---------+----------+----------+----------+---------+-------------
+wlp04.dzn | 3    | 1     | 103     | 57490,00 | 31284,00 | 88774,00 | 0       | 18,66       
+Promedio  | -    | -     | 103,00  | 57490,00 | 31284,00 | 88774,00 | 0,00    | 18,66       

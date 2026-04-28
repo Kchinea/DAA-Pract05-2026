@@ -6,6 +6,7 @@ import model.Problema;
 
 import java.io.IOException;
 import java.nio.file.Files;
+import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.List;
@@ -14,8 +15,14 @@ public class Reader {
 
     public Problema leerInstancia(String rutaArchivo) {
         try {
+            Path ruta = resolverRutaInstancia(rutaArchivo);
+            if (ruta == null) {
+                System.err.println("Error al leer el archivo: " + rutaArchivo + " (no encontrado desde: " + System.getProperty("user.dir") + ")");
+                return null;
+            }
+
             // 1. Leemos todo el contenido del archivo como un único y gran String
-            String contenido = new String(Files.readAllBytes(Paths.get(rutaArchivo)));
+            String contenido = new String(Files.readAllBytes(ruta));
 
             // 2. Extraer tamaños (Warehouses y Stores)
             int numInstalaciones = extraerEntero(contenido, "Warehouses\\s*=\\s*(\\d+);");
@@ -84,6 +91,40 @@ public class Reader {
             System.err.println("Error al leer el archivo: " + e.getMessage());
             return null;
         }
+    }
+
+    /**
+     * Resuelve la ruta de la instancia aunque el programa se ejecute desde carpetas distintas.
+     *
+     * <p>Casos típicos en este repo:
+     * <ul>
+     *   <li>Ejecutar desde la raíz del proyecto: ./instances/Public/...</li>
+     *   <li>Ejecutar desde la carpeta padre que contiene otra carpeta Practica5-DAA: ./Practica5-DAA/instances/Public/...</li>
+     * </ul>
+     */
+    private Path resolverRutaInstancia(String rutaArchivo) {
+        // 0) Resolver usando el localizador del proyecto (robusto ante CWD variable)
+        Path resolved = ProjectPaths.resolveInstanceFile(rutaArchivo);
+        if (resolved != null) return resolved;
+
+        // 1) Tal cual (por si es absoluta)
+        Path p = Paths.get(rutaArchivo);
+        if (Files.exists(p)) return p.toAbsolutePath().normalize();
+
+        // 2) Relativa al directorio de ejecución
+        Path base = Paths.get(System.getProperty("user.dir"));
+        Path p2 = base.resolve(rutaArchivo);
+        if (Files.exists(p2)) return p2.toAbsolutePath().normalize();
+
+        // 3) Fallback: si estás en la carpeta padre, suele existir ./Practica5-DAA/
+        Path p3 = base.resolve("Practica5-DAA").resolve(rutaArchivo);
+        if (Files.exists(p3)) return p3.toAbsolutePath().normalize();
+
+        // 4) Fallback extra por si hay doble anidación
+        Path p4 = base.resolve("Practica5-DAA").resolve("Practica5-DAA").resolve(rutaArchivo);
+        if (Files.exists(p4)) return p4.toAbsolutePath().normalize();
+
+        return null;
     }
 
     // --- Métodos Auxiliares Internos para limpiar el código ---

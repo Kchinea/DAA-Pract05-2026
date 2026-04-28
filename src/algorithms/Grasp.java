@@ -80,7 +80,7 @@ public class Grasp {
                 // Ordenamos por pseudo-coste (de más barato a más caro)
                 candidatos.sort(Comparator.comparingDouble(c -> c.coste));
 
-                // Cortamos la lista al tamaño del LRC (ej. las 3 mejores)
+                // Cortamos la lista al tamaño del LRC
                 int limite = Math.min(tamañoLRC, candidatos.size());
                 List<Candidato> lrc = candidatos.subList(0, limite);
 

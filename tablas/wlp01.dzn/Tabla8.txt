@@ -1,0 +1,8 @@
+
+--- TABLA 8: CÁLCULO DEL COSTE TOTAL DE LA SOLUCIÓN ---
+Concepto                       | Coste   
+-------------------------------+---------
+Costos Fijos (Apertura fj)     | 15590,00
+Costos Variables (Transporte)  | 13929,00
+Costo Total (Función Objetivo) | 29519,00
+CosteTotal(Solucion) = 29519,00

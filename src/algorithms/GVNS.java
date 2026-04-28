@@ -14,25 +14,30 @@ public class GVNS {
     private double[] pesosRL;
     private Random random;
 
+    private static final double EPS = 1e-9;
+    private static final double EXPLORATION_RATE = 0.2;
+
 public GVNS(Problema problema, List<BusquedaLocal> entornos) {
         this.problema = problema;
         this.entornos = entornos;
         
-        // ¡ESTAS SON LAS LÍNEAS QUE FALTAN!
         this.pesosRL = new double[entornos.size()];
         this.random = new Random();
         
-        // Inicializamos los pesos del Reinforcement Learning a 1.0
         for(int i = 0; i < pesosRL.length; i++) {
             pesosRL[i] = 1.0; 
         }
     }
 
     public Solucion ejecutar(Solucion solucionInicial, int iteracionesMaximas) {
+        return ejecutar(solucionInicial, iteracionesMaximas, 5);
+    }
+
+    public Solucion ejecutar(Solucion solucionInicial, int iteracionesMaximas, int kMax) {
         Solucion mejorGlobal = new Solucion(solucionInicial);
         int iteracionesSinMejora = 0;
         int k = 1; 
-        int kMax = 5; // Fuerza máxima de la perturbación
+        int kMaxLocal = Math.max(1, kMax); // Fuerza máxima de la perturbación
 
         System.out.println("Iniciando GVNS-RL...");
 
@@ -44,16 +49,33 @@ public GVNS(Problema problema, List<BusquedaLocal> entornos) {
             Solucion solMejorada = rvndConReinforcementLearning(solPerturbada);
 
             // 3. Criterio de Aceptación
-            if (solMejorada.getCosteTotal() < mejorGlobal.getCosteTotal() - 0.001) {
+            if (demandaSatisfecha(solMejorada)  && solMejorada.getCosteTotal() < mejorGlobal.getCosteTotal() - 0.001) {
                 mejorGlobal = new Solucion(solMejorada);
                 k = 1; 
                 iteracionesSinMejora = 0;
             } else {
-                k = (k % kMax) + 1; 
+                k = (k % kMaxLocal) + 1; 
                 iteracionesSinMejora++;
             }
         }
         return mejorGlobal;
+    }
+
+    private boolean demandaSatisfecha(Solucion sol) {
+        int n = problema.getClientes().size();
+        int m = problema.getInstalaciones().size();
+
+        for (int i = 0; i < n; i++) {
+            double asignado = 0.0;
+            for (int j = 0; j < m; j++) {
+                asignado += sol.getSuministros()[i][j];
+            }
+            double demanda = problema.getClientes().get(i).getDemanda();
+            if (asignado + 1e-6 < demanda) {
+                return false;
+            }
+        }
+        return true;
     }
 
     // --- FASE DE SHAKING ---
@@ -63,10 +85,13 @@ public GVNS(Problema problema, List<BusquedaLocal> entornos) {
         // Destruimos la asignación de 'k' clientes al azar y los reasignamos vorazmente
         for (int p = 0; p < k; p++) {
             int clienteAleatorio = random.nextInt(problema.getClientes().size());
+
+            // Guardar asignación original del cliente para poder revertir si la reparación falla
+            double[] asignacionOriginal = perturbada.getSuministros()[clienteAleatorio].clone();
             
             // Quitar todo su suministro
             for (int j = 0; j < problema.getInstalaciones().size(); j++) {
-                double cant = perturbada.getSuministros()[clienteAleatorio][j];
+                double cant = asignacionOriginal[j];
                 if (cant > 0) {
                     perturbada.quitarSuministro(clienteAleatorio, j, cant);
                 }
@@ -91,10 +116,26 @@ public GVNS(Problema problema, List<BusquedaLocal> entornos) {
                     }
                 }
 
-                if (mejorJ == -1) break; // Infactibilidad provocada por el shaking, se quedará parcial
+                if (mejorJ == -1) break; // No hay instalación factible para seguir reparando
                 double asig = Math.min(demandaRestante, perturbada.getCapacidadRestante()[mejorJ]);
                 perturbada.añadirSuministro(clienteAleatorio, mejorJ, asig);
                 demandaRestante -= asig;
+            }
+
+            // Si no hemos podido satisfacer toda la demanda, revertimos al estado original
+            if (demandaRestante > EPS) {
+                for (int j = 0; j < problema.getInstalaciones().size(); j++) {
+                    double cant = perturbada.getSuministros()[clienteAleatorio][j];
+                    if (cant > 0) {
+                        perturbada.quitarSuministro(clienteAleatorio, j, cant);
+                    }
+                }
+                for (int j = 0; j < problema.getInstalaciones().size(); j++) {
+                    double cant = asignacionOriginal[j];
+                    if (cant > 0) {
+                        perturbada.añadirSuministro(clienteAleatorio, j, cant);
+                    }
+                }
             }
         }
         return perturbada;
@@ -111,10 +152,11 @@ public GVNS(Problema problema, List<BusquedaLocal> entornos) {
             int indiceEntorno = seleccionarEntornoPorRuleta(entornosDisponibles);
             BusquedaLocal bl = entornos.get(indiceEntorno);
 
-            Solucion candidata = bl.mejorar(actual, problema);
+            // OPT: evitar clonar Solucion (n*m) en cada intento.
+            // aplicarMejorMovimiento aplica como máximo 1 movimiento si mejora.
+            boolean mejora = bl.aplicarMejorMovimiento(actual, problema);
 
-            if (candidata.getCosteTotal() < actual.getCosteTotal() - 0.001) {
-                actual = candidata;
+            if (mejora) {
                 // REFUERZO POSITIVO: Aumentamos el peso
                 pesosRL[indiceEntorno] += 1.0; 
                 
@@ -133,18 +175,32 @@ public GVNS(Problema problema, List<BusquedaLocal> entornos) {
     }
 
     private int seleccionarEntornoPorRuleta(List<Integer> disponibles) {
-        double sumaPesos = 0;
-        for (int idx : disponibles) sumaPesos += pesosRL[idx];
+        if (disponibles.isEmpty()) {
+            return -1;
+        }
+
+        if (random.nextDouble() < EXPLORATION_RATE) {
+            return disponibles.get(random.nextInt(disponibles.size()));
+        }
+
+        List<Integer> ordenados = new ArrayList<>(disponibles);
+        ordenados.sort((a, b) -> Double.compare(pesosRL[b], pesosRL[a]));
+
+        double sumaPesos = 0.0;
+        for (int idx : ordenados) sumaPesos += pesosRL[idx];
+        if (sumaPesos <= 0.0) {
+            return disponibles.get(random.nextInt(disponibles.size()));
+        }
 
         double valorAleatorio = random.nextDouble() * sumaPesos;
-        double acumulado = 0;
+        double acumulado = 0.0;
 
-        for (int idx : disponibles) {
+        for (int idx : ordenados) {
             acumulado += pesosRL[idx];
             if (valorAleatorio <= acumulado) {
                 return idx;
             }
         }
-        return disponibles.get(disponibles.size() - 1); // Por seguridad
+        return ordenados.get(ordenados.size() - 1); // Por seguridad unicamente
     }
 }

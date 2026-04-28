@@ -1,0 +1,6 @@
+
+--- TABLA 9: RESULTADOS VORAZ (MS-CFLP-CI) ---
+Instancia | |Jopen| | Coste Fijo | Coste Asig. | Coste Total | Incomp. | CPU_Time (s)
+----------+---------+------------+-------------+-------------+---------+-------------
+wlp04.dzn | 105     | 64230,00   | 43863,00    | 108093,00   | 0       | 0,00        
+Promedio  | 105,00  | 64230,00   | 43863,00    | 108093,00   | 0,00    | 0,00        

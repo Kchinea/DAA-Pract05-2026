@@ -1,0 +1,6 @@
+
+--- TABLA 10: RESULTADOS GRASP (AJUSTE Y RESULTADOS) ---
+Instancia | |LRC| | Ejec. | |Jopen| | C. Fijo  | C. Asig. | C. Total | Incomp. | CPU_Time (s)
+----------+-------+-------+---------+----------+----------+----------+---------+-------------
+wlp03.dzn | 2     | 1     | 79      | 49350,00 | 36331,00 | 85681,00 | 0       | 0,36        
+Promedio  | -     | -     | 79,00   | 49350,00 | 36331,00 | 85681,00 | 0,00    | 0,36        

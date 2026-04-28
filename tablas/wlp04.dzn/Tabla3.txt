@@ -1,0 +1,5 @@
+
+--- TABLA 3: CONJUNTO DE PARES INCOMPATIBLES (Ipairs) ---
+Cliente i1 | Cliente i2
+-----------+-----------
+-          | -         

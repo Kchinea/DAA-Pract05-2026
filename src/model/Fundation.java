@@ -11,12 +11,10 @@ public class Fundation {
         this.capacidad = capacidad;
     }
 
-    // Getters
     public int getId() { return id; }
     public double getCostoFijo() { return costoFijo; }
     public double getCapacidad() { return capacidad; }
 
-    // Setters
     public void setId(int id) { this.id = id; }
     public void setCostoFijo(double costoFijo) { this.costoFijo = costoFijo; }
     public void setCapacidad(double capacidad) { this.capacidad = capacidad; }

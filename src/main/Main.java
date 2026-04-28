@@ -3,6 +3,7 @@ package main;
 import algorithms.Voraz;
 import algorithms.GVNS;
 import algorithms.Grasp;
+import algorithms.RVND;
 import localsearch.BusquedaLocal;
 import localsearch.EliminarIncompatibilidad;
 import localsearch.Shift;
@@ -10,95 +11,180 @@ import localsearch.SwapClientes;
 import localsearch.SwapInstalaciones;
 import model.Problema;
 import model.Solucion;
+import utils.Menu;
+import utils.MenuConfig;
+import utils.ProjectPaths;
 import utils.Reader;
-import utils.GeneradorTablas;
+import utils.TablaExporter;
+import utils.tablas.*;
 
+import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.stream.Collectors;
 
 public class Main {
     
     public static void main(String[] args) {
-        
         Reader lector = new Reader();
-        GeneradorTablas tablas = new GeneradorTablas();
-        // Datos de la ejecución
-        String nombreInstancia = "wlp02.dzn";
-        String rutaArchivo = "instances/Public/" + nombreInstancia; 
-        
-        Problema instancia = lector.leerInstancia(rutaArchivo);
-        if (instancia == null) return;
 
-        // ==========================================
-        // 1. PRUEBA Y TABLA DEL VORAZ
-        // ==========================================
-        Voraz algoritmoVoraz = new Voraz(instancia);
-        
-        long inicioVoraz = System.currentTimeMillis();
-        Solucion solVoraz = algoritmoVoraz.ejecutar();
-        long tiempoVoraz = System.currentTimeMillis() - inicioVoraz;
-        
-        tablas.imprimirCabeceraVoraz();
-        tablas.imprimirFilaVoraz(nombreInstancia, solVoraz, tiempoVoraz);
+        List<String> instancias = listarInstanciasDisponibles();
+        MenuConfig cfg = new Menu().preguntarConfiguracion(instancias);
 
-        // ==========================================
-        // 2. PRUEBA Y TABLA DEL GRASP
-        // ==========================================
-        List<BusquedaLocal> busquedasLocales = new ArrayList<>();
-        busquedasLocales.add(new Shift());
-        busquedasLocales.add(new SwapClientes());
+        List<String> aEjecutar;
+        if (cfg.usarTodasLasInstancias()) {
+            aEjecutar = instancias;
+        } else {
+            aEjecutar = cfg.instanciaUnica() == null ? List.of() : List.of(cfg.instanciaUnica());
+        }
 
-        int iteraciones = 10; // Subimos a 50 iteraciones para obtener mejores resultados
-        
-        tablas.imprimirCabeceraGrasp();
+        if (aEjecutar.isEmpty()) {
+            System.out.println("No hay instancias a ejecutar.");
+            return;
+        }
 
-        // El PDF pide probar con LRC = 2 y LRC = 3, y hacer varias ejecuciones (ej. 3 por cada LRC)
-        int[] valoresLRC = {2, 3};
-        int numEjecuciones = 3;
+        Path outRoot = ProjectPaths.outputTablasDir();
 
-        for (int lrc : valoresLRC) {
-            for (int ejec = 1; ejec <= numEjecuciones; ejec++) {
-                
-                Grasp algoritmoGrasp = new Grasp(instancia, busquedasLocales, lrc);
-                
-                long inicioGrasp = System.currentTimeMillis();
-                Solucion solGrasp = algoritmoGrasp.ejecutar(iteraciones);
-                long tiempoGrasp = System.currentTimeMillis() - inicioGrasp;
-                
-                tablas.imprimirFilaGrasp(nombreInstancia, lrc, ejec, solGrasp, tiempoGrasp);
+        for (String nombreInstancia : aEjecutar) {
+            Problema problema = lector.leerInstancia("instances/Public/" + nombreInstancia);
+            if (problema == null) {
+                System.out.println("Saltando instancia: " + nombreInstancia);
+                continue;
             }
+
+            // Vecindades
+            List<BusquedaLocal> blBasicas = new ArrayList<>();
+            blBasicas.add(new Shift());
+            blBasicas.add(new SwapClientes());
+
+            List<BusquedaLocal> blCompletas = new ArrayList<>();
+            blCompletas.add(new Shift());
+            blCompletas.add(new SwapClientes());
+            blCompletas.add(new SwapInstalaciones());
+            blCompletas.add(new EliminarIncompatibilidad());
+            Path dirInst = outRoot.resolve(nombreInstancia);
+
+            // Tablas 1-3
+            TablaExporter.exportar(dirInst, "Tabla1.txt", new Tabla1ParametrosInstancia(problema));
+            TablaExporter.exportar(dirInst, "Tabla2.txt", new Tabla2MatrizCostes(problema));
+            TablaExporter.exportar(dirInst, "Tabla3.txt", new Tabla3ParesIncompatibles(problema));
+
+            int ejecuciones = (cfg.modo() == MenuConfig.Modo.ESTUDIO) ? Math.max(1, cfg.ejecuciones()) : 1;
+
+            // --- SOLUCIÓN INICIAL (y tabla 9/10) ---
+            Solucion solInicialParaMeta;
+            if (cfg.solucionInicial() == MenuConfig.SolucionInicial.VORAZ) {
+                Voraz voraz = new Voraz(problema);
+                long ini = System.currentTimeMillis();
+                Solucion solInicial = voraz.ejecutar();
+                long tInicialMs = System.currentTimeMillis() - ini;
+
+                TablaResultadosVoraz t = new TablaResultadosVoraz();
+                t.addResultado(nombreInstancia, solInicial, tInicialMs);
+                TablaExporter.exportar(dirInst, "Tabla9.txt", t);
+
+                solInicialParaMeta = solInicial;
+            } else {
+                TablaResultadosGrasp t = new TablaResultadosGrasp();
+                Solucion mejorInicial = null;
+                double mejorCoste = Double.POSITIVE_INFINITY;
+
+                for (int ejec = 1; ejec <= ejecuciones; ejec++) {
+                    Grasp grasp = new Grasp(problema, blBasicas, cfg.graspLrc());
+                    long ini = System.currentTimeMillis();
+                    Solucion solInicial = grasp.ejecutar(cfg.graspIteraciones());
+                    long tInicialMs = System.currentTimeMillis() - ini;
+
+                    t.addResultado(nombreInstancia, cfg.graspLrc(), ejec, solInicial, tInicialMs);
+                    if (solInicial.getCosteTotal() < mejorCoste) {
+                        mejorCoste = solInicial.getCosteTotal();
+                        mejorInicial = solInicial;
+                    }
+                }
+
+                TablaExporter.exportar(dirInst, "Tabla10.txt", t);
+                solInicialParaMeta = mejorInicial;
+            }
+
+            // --- METAHEURÍSTICA (y tabla 11/12) ---
+            Solucion mejorFinal = null;
+            double mejorCosteFinal = Double.POSITIVE_INFINITY;
+
+            if (cfg.metaheuristica() == MenuConfig.Metaheuristica.GVNS) {
+                TablaResultadosGvns t = new TablaResultadosGvns();
+
+                List<Integer> kmaxVals = cfg.gvnsKmaxValores();
+                if (kmaxVals == null || kmaxVals.isEmpty()) {
+                    kmaxVals = List.of(3);
+                }
+
+                for (int kmax : kmaxVals) {
+                    int kMaxLocal = Math.max(1, kmax);
+                    for (int ejec = 1; ejec <= ejecuciones; ejec++) {
+                        GVNS gvns = new GVNS(problema, blCompletas);
+                        long ini = System.currentTimeMillis();
+                        Solucion solFinal = gvns.ejecutar(solInicialParaMeta, cfg.gvnsIteracionesSinMejora(), kMaxLocal);
+                        long tMetaMs = System.currentTimeMillis() - ini;
+
+                        t.addResultado(nombreInstancia, kMaxLocal, ejec, solFinal, tMetaMs);
+                        if (solFinal.getCosteTotal() < mejorCosteFinal) {
+                            mejorCosteFinal = solFinal.getCosteTotal();
+                            mejorFinal = solFinal;
+                        }
+                    }
+                }
+
+                TablaExporter.exportar(dirInst, "Tabla11.txt", t);
+            } else {
+                TablaResultadosRvnd t = new TablaResultadosRvnd();
+
+                for (int ejec = 1; ejec <= ejecuciones; ejec++) {
+                    RVND rvnd = new RVND(problema, blCompletas);
+                    long ini = System.currentTimeMillis();
+                    Solucion solFinal = rvnd.ejecutar(solInicialParaMeta);
+                    long tMetaMs = System.currentTimeMillis() - ini;
+
+                    t.addResultado(nombreInstancia, ejec, solFinal, tMetaMs);
+                    if (solFinal.getCosteTotal() < mejorCosteFinal) {
+                        mejorCosteFinal = solFinal.getCosteTotal();
+                        mejorFinal = solFinal;
+                    }
+                }
+
+                TablaExporter.exportar(dirInst, "Tabla12.txt", t);
+            }
+
+            // Tablas 4-8: se exportan para la mejor solución final del modo elegido
+            if (mejorFinal != null) {
+                TablaExporter.exportar(dirInst, "Tabla4.txt", new Tabla4AperturaInstalaciones(problema, mejorFinal));
+                TablaExporter.exportar(dirInst, "Tabla5.txt", new Tabla5AsignacionClientes(problema, mejorFinal));
+                TablaExporter.exportar(dirInst, "Tabla6.txt", new Tabla6VerificacionRestricciones(problema, mejorFinal));
+                TablaExporter.exportar(dirInst, "Tabla7.txt", new Tabla7DesgloseCostesVariables(problema, mejorFinal));
+                TablaExporter.exportar(dirInst, "Tabla8.txt", new Tabla8CosteTotal(problema, mejorFinal));
+            }
+
+            System.out.println("Tablas exportadas: " + dirInst.toAbsolutePath());
         }
 
-        System.out.println("\n=========================================");
-        System.out.println("   PRUEBA DEL GVNS-RL (Entrega Final)    ");
-        System.out.println("=========================================");
-            
-        List<BusquedaLocal> todasLasBLs = new ArrayList<>();
-        todasLasBLs.add(new Shift());
-        todasLasBLs.add(new SwapClientes());
-        todasLasBLs.add(new SwapInstalaciones());
-        todasLasBLs.add(new EliminarIncompatibilidad());
-            
-        GVNS gvns = new GVNS(instancia, todasLasBLs);
-            
-        long inicioGVNS = System.currentTimeMillis();
-        // Le pasamos la solución Voraz como punto de partida y le damos 50 iteraciones sin mejora como tope
-        Solucion solFinalGVNS = gvns.ejecutar(solVoraz, 50); 
-        long tiempoGVNS = System.currentTimeMillis() - inicioGVNS;
-            
-        System.out.printf("Coste Final GVNS-RL: %.2f (Tiempo: %d ms)\n", solFinalGVNS.getCosteTotal(), tiempoGVNS);
-        System.out.println("Instalaciones abiertas: " + contarInstalaciones(solFinalGVNS));
+        System.out.println("\nSalida en: " + outRoot.toAbsolutePath());
     }
 
-    private static int contarInstalaciones(Solucion solucion) {
-        if (solucion == null) return 0;
-        boolean[] abiertas = solucion.getInstalacionesAbiertas();
-        if (abiertas == null) return 0;
-
-        int total = 0;
-        for (boolean abierta : abiertas) {
-            if (abierta) total++;
+    private static List<String> listarInstanciasDisponibles() {
+        Path instancesPublic = ProjectPaths.findInstancesPublicDir();
+        if (instancesPublic == null) {
+            return List.of();
         }
-        return total;
+        try {
+            return Files.list(instancesPublic)
+                    .filter(p -> Files.isRegularFile(p) && p.getFileName().toString().endsWith(".dzn"))
+                    .map(p -> p.getFileName().toString())
+                    .sorted()
+                    .collect(Collectors.toList());
+        } catch (IOException e) {
+            return List.of();
+        }
     }
+
 }
