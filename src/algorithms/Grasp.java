@@ -25,30 +25,30 @@ public class Grasp {
     }
 
     public Solucion ejecutar(int iteraciones) {
-        Solucion mejorSolucionGlobal = null;
-        double mejorCosteGlobal = Double.MAX_VALUE;
+       // Solucion mejorSolucionGlobal = null;
+    // double mejorCosteGlobal = Double.MAX_VALUE;
 
         System.out.println("Iniciando GRASP (LRC = " + tamañoLRC + ", Iteraciones = " + iteraciones + ")...");
-
-        for (int i = 0; i < iteraciones; i++) {
+      //   for (int i = 0; i < iteraciones; i++) {
             // Fase 1: Construcción Aleatorizada
             Solucion solucionActual = faseConstructiva();
-
-            // Fase 2: Búsquedas Locales
-            for (BusquedaLocal bl : busquedasLocales) {
-                solucionActual = bl.mejorar(solucionActual, problema);
-            }
-
-            // Actualizar la mejor solución si hemos mejorado
-            if (mejorSolucionGlobal == null || solucionActual.getCosteTotal() < mejorCosteGlobal) {
-                mejorSolucionGlobal = new Solucion(solucionActual); // Copia de la mejor
-                mejorCosteGlobal = solucionActual.getCosteTotal();
-                System.out.println("  -> ¡Nueva mejor solución en iteración " + (i+1) + "! Coste: " + mejorCosteGlobal);
-            }
-        }
+//
+         //   // Fase 2: Búsquedas Locales
+         //   for (BusquedaLocal bl : busquedasLocales) {
+         //       solucionActual = bl.mejorar(solucionActual, problema);
+         //   }
+//
+         //   // Actualizar la mejor solución si hemos mejorado
+         //   if (mejorSolucionGlobal == null || solucionActual.getCosteTotal() < mejorCosteGlobal) {
+         //       mejorSolucionGlobal = new Solucion(solucionActual); // Copia de la mejor
+         //       mejorCosteGlobal = solucionActual.getCosteTotal();
+         //       System.out.println("  -> ¡Nueva mejor solución en iteración " + (i+1) + "! Coste: " + mejorCosteGlobal);
+         //   }
+       // }
 
         System.out.println("GRASP Finalizado.");
-        return mejorSolucionGlobal;
+        // return mejorSolucionGlobal;
+        return solucionActual; // MODIFICACION: Devolvemos la última solución encontrada, no la mejor global
     }
 
     private Solucion faseConstructiva() {

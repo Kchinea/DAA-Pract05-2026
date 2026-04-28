@@ -1,9 +1,10 @@
 package main;
 
-import algorithms.Voraz;
+import algorithms.VorazRef;
 import algorithms.GVNS;
 import algorithms.Grasp;
 import algorithms.RVND;
+import algorithms.VND;
 import localsearch.BusquedaLocal;
 import localsearch.EliminarIncompatibilidad;
 import localsearch.Shift;
@@ -76,7 +77,7 @@ public class Main {
             // --- SOLUCIÓN INICIAL (y tabla 9/10) ---
             Solucion solInicialParaMeta;
             if (cfg.solucionInicial() == MenuConfig.SolucionInicial.VORAZ) {
-                Voraz voraz = new Voraz(problema);
+                VorazRef voraz = new VorazRef(problema);
                 long ini = System.currentTimeMillis();
                 Solucion solInicial = voraz.ejecutar();
                 long tInicialMs = System.currentTimeMillis() - ini;
@@ -137,7 +138,7 @@ public class Main {
                 }
 
                 TablaExporter.exportar(dirInst, "Tabla11.txt", t);
-            } else {
+            } else if (cfg.metaheuristica() == MenuConfig.Metaheuristica.RVND) {
                 TablaResultadosRvnd t = new TablaResultadosRvnd();
 
                 for (int ejec = 1; ejec <= ejecuciones; ejec++) {
@@ -154,6 +155,24 @@ public class Main {
                 }
 
                 TablaExporter.exportar(dirInst, "Tabla12.txt", t);
+                // MODIFICAICION
+            } else {
+                TablaResultadosVnd t = new TablaResultadosVnd();
+
+                for (int ejec = 1; ejec <= ejecuciones; ejec++) {
+                    VND vnd = new VND(problema, blCompletas);
+                    long ini = System.currentTimeMillis();
+                    Solucion solFinal = vnd.ejecutar(solInicialParaMeta);
+                    long tMetaMs = System.currentTimeMillis() - ini;
+
+                    t.addResultado(nombreInstancia, ejec, solFinal, tMetaMs);
+                    if (solFinal.getCosteTotal() < mejorCosteFinal) {
+                        mejorCosteFinal = solFinal.getCosteTotal();
+                        mejorFinal = solFinal;
+                    }
+                }
+
+                TablaExporter.exportar(dirInst, "Tabla13.txt", t);
             }
 
             // Tablas 4-8: se exportan para la mejor solución final del modo elegido

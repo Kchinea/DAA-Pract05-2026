@@ -17,5 +17,6 @@ public record MenuConfig(
 ) {
     public enum Modo { NORMAL, ESTUDIO }
     public enum SolucionInicial { VORAZ, GRASP }
-    public enum Metaheuristica { GVNS, RVND }
+    //MODIFICACION
+    public enum Metaheuristica { GVNS, RVND, VND }
 }

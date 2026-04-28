@@ -23,18 +23,24 @@ public class Menu {
             ejecuciones = leerEntero(sc, "Ejecuciones por configuración (por defecto 3)", 3);
             if (ejecuciones < 1) ejecuciones = 1;
         }
-
+        //MODIFICACION
         MenuConfig.SolucionInicial inicial = elegir(sc,
-                "Solución inicial para GVNS/RVND",
-                List.of("Voraz", "GRASP"),
+            "Solución inicial para GVNS/RVND/VND",
+                List.of("VorazRef", "GRASP"),
                 1
         ) == 1 ? MenuConfig.SolucionInicial.VORAZ : MenuConfig.SolucionInicial.GRASP;
 
-        MenuConfig.Metaheuristica meta = elegir(sc,
-                "Metaheurística a ejecutar",
-                List.of("GVNS", "RVND"),
-                1
-        ) == 1 ? MenuConfig.Metaheuristica.GVNS : MenuConfig.Metaheuristica.RVND;
+        int metaChoice = elegir(sc,
+            "Metaheurística a ejecutar",
+            List.of("GVNS", "RVND", "VND (secuencial)"),
+            1
+        );
+
+        MenuConfig.Metaheuristica meta = switch (metaChoice) {
+            case 1 -> MenuConfig.Metaheuristica.GVNS;
+            case 2 -> MenuConfig.Metaheuristica.RVND;
+            default -> MenuConfig.Metaheuristica.VND;
+        };
 
         int modo = elegir(sc,
                 "Instancias a ejecutar",
